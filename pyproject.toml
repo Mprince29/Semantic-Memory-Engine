@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "semantic-memory-engine"
+version = "0.1.0"
+description = "Backend-only semantic memory and prompt compression engine for local LLMs."
+requires-python = ">=3.11"
+dependencies = [
+  "chromadb>=0.5.5",
+  "numpy>=1.26.0",
+  "requests>=2.32.0",
+  "sentence-transformers>=3.0.0",
+  "spacy>=3.7.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["semantic_memory", "semantic_memory.*"]

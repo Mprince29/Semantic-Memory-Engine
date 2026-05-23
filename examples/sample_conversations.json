@@ -1,0 +1,980 @@
+[
+  {
+    "session_id": "ollama_demo",
+    "history": [
+      "I am building an AI project involving Ollama and need to submit it tomorrow.",
+      "I prefer Python and want minimal dependencies.",
+      "Please keep everything local only and avoid cloud services.",
+      "Earlier I asked about Docker setup and ChromaDB embeddings.",
+      "My laptop only has 8GB RAM."
+    ],
+    "query": "How do I containerize this?",
+    "answer": "Use a small Python base image and keep the container single-service. Pin the Ollama-compatible embedding setup, persist the ChromaDB volume locally, and avoid adding cloud dependencies because the project is local-only and your machine has limited RAM.",
+    "extra_queries": [
+      {"query": "Which embedding model fits my RAM?", "answer": "With 8GB RAM stay with all-MiniLM-L6-v2 or nomic-embed-text via Ollama. Both run under 1GB and integrate directly with ChromaDB without requiring cloud APIs."},
+      {"query": "How do I keep dependencies minimal?", "answer": "Pin only requests, chromadb, and sentence-transformers in requirements.txt. Avoid langchain or heavyweight frameworks — you only need the retrieval and embedding path."}
+    ]
+  },
+  {
+    "session_id": "rag_debug",
+    "history": [
+      "I need to build a RAG system with Python, Ollama, and ChromaDB.",
+      "Right now I am debugging an embedding mismatch.",
+      "Yesterday the embedding function was still working.",
+      "Please avoid managed APIs."
+    ],
+    "query": "Why are the embeddings not matching expected dimensions?",
+    "answer": "The most likely cause is that the embedding model now returns a different vector size than the Chroma collection expects. Check whether the Ollama embedding model changed, confirm the stored collection dimension, and rebuild the collection if the schema was created with an older embedding size.",
+    "extra_queries": [
+      {"query": "How do I rebuild the ChromaDB collection safely?", "answer": "Delete the existing persist directory, recreate the collection with the correct embedding function, and re-ingest your documents. Since you avoid managed APIs, do this fully locally before re-running the RAG pipeline."}
+    ]
+  },
+  {
+    "session_id": "exam_prep_001",
+    "history": [
+      "I have my GATE exam in three days.",
+      "I prefer short focused notes over long textbook reading.",
+      "I am weak in operating systems and computer networks.",
+      "I want to avoid watching long YouTube lectures."
+    ],
+    "query": "What should I study first?",
+    "answer": "Start with OS since it has high GATE weightage and your weakness there costs more marks. Use only previous year questions and one-page concept sheets — no long lectures. Spend day 1 on OS scheduling and memory management, day 2 on networking layers and TCP/IP, day 3 on revision.",
+    "extra_queries": [
+      {"query": "How many hours per subject should I split?", "answer": "Given three days and two weak subjects, split 10 hours OS, 8 hours networks, 6 hours revision. Avoid new topics — only high-yield areas from PYQs since the deadline is tight."},
+      {"query": "What is the fastest way to revise networks?", "answer": "Make a one-page cheat sheet covering OSI layers, TCP handshake, subnetting basics, and congestion control. Solve 20 PYQs on each topic. Since you avoid long lectures, this keeps revision under 3 hours."}
+    ]
+  },
+  {
+    "session_id": "startup_mvp_001",
+    "history": [
+      "I am building an MVP for a food delivery startup.",
+      "The launch deadline is end of this month.",
+      "I prefer React for frontend and FastAPI for backend.",
+      "Budget is very tight so no paid cloud services.",
+      "Target users are in tier-2 Indian cities."
+    ],
+    "query": "What features should the MVP have?",
+    "answer": "For a tight-budget tier-2 launch, keep MVP to: restaurant listing, item browse, cart, and cash-on-delivery order placement. Skip live tracking and payments for now — COD dominates tier-2 markets. Use SQLite locally for the first month to avoid cloud DB costs. FastAPI + React keeps your stack consistent with your preferences.",
+    "extra_queries": [
+      {"query": "How do I avoid cloud costs completely?", "answer": "Host on a single VPS (Hetzner or DigitalOcean cheapest tier), use SQLite until you need concurrency, and serve static React build directly from FastAPI. No AWS, no Firebase — consistent with your zero-cloud constraint."},
+      {"query": "What is the minimum viable backend for this?", "answer": "Three FastAPI routers: restaurants (list, detail), menu (by restaurant), orders (create, status). SQLite with SQLModel. No auth for MVP — just a phone number field on order. Keeps it under 500 lines of backend code."}
+    ]
+  },
+  {
+    "session_id": "lora_finetune_001",
+    "history": [
+      "I want to fine-tune a small LLM on my custom dataset.",
+      "I have a Colab T4 GPU available.",
+      "I prefer Qwen2.5-3B as the base model.",
+      "My dataset has around 800 instruction-response pairs.",
+      "I want to avoid full fine-tuning due to memory limits."
+    ],
+    "query": "Which fine-tuning method should I use?",
+    "answer": "QLoRA is the right choice given T4 memory and your preference for Qwen2.5-3B. Use 4-bit quantization with LoRA rank 16, target q_proj and v_proj. 800 samples is enough for instruction following if the data quality is high. Use the Unsloth library — it cuts T4 VRAM usage by 60% compared to vanilla PEFT.",
+    "extra_queries": [
+      {"query": "What LoRA rank should I use for 800 samples?", "answer": "Rank 16 is safe for 800 samples — high enough to capture instruction patterns, low enough to avoid overfitting. With T4 and Qwen2.5-3B in 4-bit, rank 16 fits in under 12GB VRAM."},
+      {"query": "How long will training take on T4?", "answer": "At rank 16, 4-bit, 800 samples, 3 epochs: roughly 45-90 minutes on T4. Use gradient checkpointing and batch size 4 with gradient accumulation 4 to maximize throughput without OOM."}
+    ]
+  },
+  {
+    "session_id": "chromadb_prod_001",
+    "history": [
+      "I need to move my ChromaDB from development to production.",
+      "Everything must run on a single Linux server with 16GB RAM.",
+      "I prefer persistent disk storage over in-memory mode.",
+      "Avoid any managed vector DB services.",
+      "I am currently debugging a slow query issue."
+    ],
+    "query": "How do I optimize ChromaDB query speed?",
+    "answer": "For single-server persistent ChromaDB, the main levers are: use HNSW index with ef_construction 100 and m 16 on collection creation, batch your upserts instead of one-by-one inserts, and limit metadata fields per document since Chroma scans metadata at query time. With 16GB RAM you can keep the index warm in memory if your collection is under 500K vectors.",
+    "extra_queries": [
+      {"query": "How do I persist data safely across restarts?", "answer": "Mount the persist_directory to a dedicated disk path and set chroma_db_impl to duckdb+parquet. Add a simple backup cron that copies the directory daily. Since you avoid managed services, this is your only safety net."}
+    ]
+  },
+  {
+    "session_id": "budget_planner_001",
+    "history": [
+      "I earn 45000 rupees per month.",
+      "My rent is 12000 and groceries around 5000.",
+      "I want to save for a laptop that costs 70000.",
+      "My deadline for buying the laptop is 6 months.",
+      "I prefer not to take any loan or EMI."
+    ],
+    "query": "How much should I save per month to reach my goal?",
+    "answer": "You need 70000 in 6 months without EMI. After rent 12000 and groceries 5000, you have 28000 remaining. To hit 70000 you need roughly 11700 per month in savings. That leaves about 16300 for other expenses each month — tight but doable if you track discretionary spending carefully.",
+    "extra_queries": [
+      {"query": "What expenses should I cut first?", "answer": "Since groceries and rent are fixed, look at dining out, subscriptions, and travel first. Cutting 3000-4000 from those gives you a safety buffer while still hitting the 11700 monthly savings target."},
+      {"query": "Is my goal realistic in 6 months?", "answer": "Yes, 11700 per month from a 28000 surplus is 42% savings rate — ambitious but achievable without a loan. Build a small emergency buffer of 10000 first so one unexpected expense doesn't derail the laptop goal."}
+    ]
+  },
+  {
+    "session_id": "django_api_001",
+    "history": [
+      "I am building a REST API using Django and DRF.",
+      "I need to submit the project by this Friday.",
+      "I prefer token-based authentication over session auth.",
+      "I am currently stuck on serializer validation errors.",
+      "My senior wants me to avoid third-party auth packages."
+    ],
+    "query": "How do I fix nested serializer validation?",
+    "answer": "For DRF nested serializer validation errors, override the validate method in the parent serializer and call each child serializer's is_valid explicitly. Use run_validators=False on the nested serializer if the issue is duplicate key checks. Since you avoid third-party auth, ensure your token model is the source of truth and not conflicting with the user serializer.",
+    "extra_queries": [
+      {"query": "How do I implement token auth without third-party packages?", "answer": "Use DRF's built-in TokenAuthentication — it is part of DRF core, not third-party. Create a token on user login with Token.objects.get_or_create(user=user) and return it in the login response. Add TokenAuthentication to DEFAULT_AUTHENTICATION_CLASSES in settings."}
+    ]
+  },
+  {
+    "session_id": "health_habit_001",
+    "history": [
+      "I want to lose 8 kg in the next 3 months.",
+      "I prefer home workouts over gym.",
+      "I have only 30 minutes free in the morning.",
+      "I avoid any oil-heavy food.",
+      "I work a desk job so I sit for 8 hours daily."
+    ],
+    "query": "What workout and diet plan suits me?",
+    "answer": "For 30-minute home sessions targeting 8kg in 3 months: do 3 days strength (bodyweight circuits) and 2 days cardio (jump rope or brisk walk). For diet, since you avoid oily food, focus on dal, sabzi with minimal oil, and boiled eggs or paneer for protein. Cut refined carbs at dinner. 3 months at 500-calorie daily deficit is realistic for 8kg.",
+    "extra_queries": [
+      {"query": "What is the best 30-minute morning workout?", "answer": "20 minutes of HIIT bodyweight (burpees, squats, push-ups, mountain climbers in 40-20 intervals) followed by 10 minutes core work. No equipment needed, fits your home constraint, and burns 250-350 calories in 30 minutes."}
+    ]
+  },
+  {
+    "session_id": "flask_deploy_001",
+    "history": [
+      "I built a Flask app and want to deploy it.",
+      "My server is Ubuntu 22.04 with 2GB RAM.",
+      "I prefer Nginx as reverse proxy.",
+      "I want to avoid Docker for simplicity.",
+      "The app needs to stay up after server reboot."
+    ],
+    "query": "How do I deploy Flask without Docker?",
+    "answer": "Use Gunicorn as the WSGI server behind Nginx. Create a systemd service file for Gunicorn so it auto-starts on reboot. With 2GB RAM, run 2 Gunicorn workers (formula: 2*cores + 1). Configure Nginx to proxy_pass to the Gunicorn socket. This is the standard non-Docker production pattern for Flask on Ubuntu.",
+    "extra_queries": [
+      {"query": "How do I write the systemd service file?", "answer": "Create /etc/systemd/system/myapp.service with ExecStart pointing to your virtualenv gunicorn binary, WorkingDirectory set to your app folder, and Restart=always. Run systemctl enable myapp and systemctl start myapp. It survives reboots with no Docker needed."}
+    ]
+  },
+  {
+    "session_id": "ml_pipeline_001",
+    "history": [
+      "I am building a machine learning pipeline for text classification.",
+      "Dataset has 50000 samples with 10 classes.",
+      "I prefer scikit-learn over deep learning for this task.",
+      "I need the model in production within two weeks.",
+      "My machine has no GPU."
+    ],
+    "query": "Which model should I start with?",
+    "answer": "For 50K samples, 10-class text classification without GPU, start with TF-IDF + Logistic Regression. It trains in minutes on CPU, is easily explainable, and consistently hits 80-85% accuracy on standard text datasets. If you need more, try LinearSVC or LightGBM on top of TF-IDF. Two-week deadline means avoid deep learning — no GPU makes it impractical.",
+    "extra_queries": [
+      {"query": "How do I handle class imbalance in 10 classes?", "answer": "Use class_weight=balanced in Logistic Regression or LinearSVC. For evaluation, report macro F1 not accuracy. If one class has under 500 samples, use SMOTE on the TF-IDF vectors or oversample during train split."}
+    ]
+  },
+  {
+    "session_id": "python_async_001",
+    "history": [
+      "I am learning async programming in Python.",
+      "I prefer practical examples over theory.",
+      "I am currently debugging a coroutine that never resolves.",
+      "I use Python 3.11.",
+      "I avoid using threading — want pure asyncio."
+    ],
+    "query": "Why is my coroutine hanging?",
+    "answer": "Most common cause: calling a blocking function inside an async context without await or run_in_executor. Check if you have any time.sleep, file I/O, or requests calls inside your coroutine — replace with asyncio.sleep, aiofiles, or httpx. In Python 3.11, use asyncio.run() at the top level and never nest event loops.",
+    "extra_queries": [
+      {"query": "How do I run multiple coroutines at once?", "answer": "Use asyncio.gather(*coroutines) — it runs them concurrently on the same event loop. Since you avoid threading, this is the pure asyncio pattern. If one coroutine errors, gather cancels others by default unless you set return_exceptions=True."}
+    ]
+  },
+  {
+    "session_id": "interview_prep_001",
+    "history": [
+      "I have a system design interview at a product company in 5 days.",
+      "I prefer visual diagrams and real examples over abstract concepts.",
+      "I am weak in database sharding and caching strategies.",
+      "I want to avoid rote memorization — I prefer understanding.",
+      "I have interviewed twice before and failed on scalability questions."
+    ],
+    "query": "How should I prepare for system design in 5 days?",
+    "answer": "Focus only on your weak spots: sharding and caching. Day 1-2: understand consistent hashing using the WhatsApp group distribution analogy — users spread across nodes like parcels in different post offices. Day 3: Redis caching patterns (cache-aside, write-through). Day 4: design one system end-to-end (URL shortener). Day 5: mock interview. Since you failed on scalability before, practice saying numbers aloud — 10M users, 1000 RPS — to make trade-offs concrete.",
+    "extra_queries": [
+      {"query": "How do I explain sharding simply in the interview?", "answer": "Use the post office analogy: sharding is distributing letters (data) across multiple post offices (shards) by pin code (shard key). Each post office handles only its zone. Consistent hashing ensures you add/remove post offices without reshuffling everything. This is visual and avoids rote definitions."}
+    ]
+  },
+  {
+    "session_id": "sql_optimize_001",
+    "history": [
+      "I have a slow PostgreSQL query that runs on 5 million rows.",
+      "Currently it takes 8 seconds and I need it under 1 second.",
+      "I prefer not adding more hardware — optimize the query first.",
+      "The table has no indexes on the filter columns.",
+      "I am debugging this for a production issue right now."
+    ],
+    "query": "What is the fastest way to fix this?",
+    "answer": "First, run EXPLAIN ANALYZE on the query to see where the 8 seconds go. Then add a B-tree index on your most selective filter column — for 5M rows this often drops query time from seconds to milliseconds. If you filter on multiple columns, use a composite index matching your WHERE clause order. No hardware change needed — missing indexes are the most common cause of this pattern.",
+    "extra_queries": [
+      {"query": "How do I add the index without blocking production?", "answer": "Use CREATE INDEX CONCURRENTLY — it builds the index without locking the table for reads or writes. It takes longer than a regular index build but is safe for production traffic. Check pg_stat_progress_create_index to monitor progress."}
+    ]
+  },
+  {
+    "session_id": "react_state_001",
+    "history": [
+      "I am building a React dashboard with complex state.",
+      "I prefer Zustand over Redux for state management.",
+      "The deadline for this feature is next Monday.",
+      "I am currently stuck on state sync between two components.",
+      "I avoid prop drilling at all costs."
+    ],
+    "query": "How do I sync state between sibling components?",
+    "answer": "With Zustand, create a single store slice that both siblings subscribe to. Component A writes to the store, Component B reads from it — no prop drilling, no context threading. Since your deadline is Monday, avoid restructuring the component tree. Just add a shared slice to your existing Zustand store and both components connect directly.",
+    "extra_queries": [
+      {"query": "How do I prevent unnecessary re-renders with Zustand?", "answer": "Use selector functions in useStore — each component subscribes only to the slice it needs. const value = useStore(state => state.specificValue). This prevents re-renders when unrelated parts of the store change."}
+    ]
+  },
+  {
+    "session_id": "docker_compose_001",
+    "history": [
+      "I am setting up a multi-service app with Docker Compose.",
+      "Services are: FastAPI, PostgreSQL, Redis, and Nginx.",
+      "I prefer volume mounts for persistence.",
+      "My server has 4GB RAM.",
+      "I want to avoid Kubernetes for now — too complex."
+    ],
+    "query": "How do I structure the docker-compose.yml?",
+    "answer": "With 4GB RAM and four services, keep each service memory-limited: Nginx 128MB, Redis 256MB, FastAPI 512MB, Postgres 1GB. Use named volumes for Postgres data and Redis persistence. Set depends_on with health checks so FastAPI waits for Postgres to be ready. Nginx routes external traffic to FastAPI upstream. No Kubernetes needed for this scale.",
+    "extra_queries": [
+      {"query": "How do I handle environment variables securely?", "answer": "Use a .env file at the project root and reference it in docker-compose with env_file: .env. Never hardcode passwords in docker-compose.yml. Add .env to .gitignore. For production, inject secrets via environment variables in your CI pipeline instead."}
+    ]
+  },
+  {
+    "session_id": "nlp_extraction_001",
+    "history": [
+      "I need to extract named entities from customer support tickets.",
+      "Tickets are in English and Hindi mixed.",
+      "I prefer lightweight models — no GPU available.",
+      "Dataset has around 20000 tickets.",
+      "Deadline is end of this sprint, 10 days from now."
+    ],
+    "query": "Which NER approach works best for this?",
+    "answer": "For mixed English-Hindi, lightweight, no GPU: use a fine-tuned multilingual model like ai4bharat/indic-bert or xlm-roberta-base with spaCy's transformers pipeline. For 20K tickets in 10 days, fine-tune on a 2000-sample labeled subset first to validate quality. If labeling is bottlenecked, start with rule-based extraction using regex for structured fields (order IDs, phone numbers) and model-based for fuzzy entities.",
+    "extra_queries": [
+      {"query": "How do I handle code-mixed Hindi-English text?", "answer": "Transliterate Hinglish to English first using indicnlp or a simple mapping, then run the NER model. Alternatively, fine-tune xlm-roberta on your specific ticket vocabulary — it handles code-mixing natively better than English-only models."}
+    ]
+  },
+  {
+    "session_id": "spl_training_001",
+    "history": [
+      "I want to fine-tune a model to understand symbolic prompt language.",
+      "Base model is Qwen2.5-3B-Instruct.",
+      "Training runs on Google Colab T4.",
+      "I have 600 SPL training samples ready.",
+      "I prefer QLoRA over full fine-tuning."
+    ],
+    "query": "What is the best training configuration for this?",
+    "answer": "For 600 SPL samples on Qwen2.5-3B with T4 and QLoRA: use 4-bit NF4 quantization, LoRA rank 8-16, alpha 32, target q_proj and v_proj. Train for 3-5 epochs with learning rate 2e-4 and cosine schedule. Batch size 4 with gradient accumulation 4 gives effective batch 16. Use Unsloth for Qwen support — it reduces T4 VRAM by ~40% versus vanilla PEFT.",
+    "extra_queries": [
+      {"query": "How do I evaluate if the model learned SPL correctly?", "answer": "Create a held-out eval set of 60 SPL prompts (10% of your data) with reference answers. Measure: does the model use the slot values in its answer? Does it avoid hallucinating information not present in the SPL context? Score manually on 20 samples to get a baseline accuracy."}
+    ]
+  },
+  {
+    "session_id": "pension_plan_001",
+    "history": [
+      "I am 28 years old and want to start retirement planning.",
+      "I prefer low-risk instruments.",
+      "I can invest 5000 rupees per month.",
+      "I want to retire by 55.",
+      "I avoid stock market due to risk aversion."
+    ],
+    "query": "What investment options should I choose?",
+    "answer": "For low-risk, 5000/month, 27-year horizon avoiding stocks: NPS Tier-1 is best — government-backed, partial equity managed conservatively, tax benefit under 80CCD. Allocate 3000 NPS + 2000 PPF monthly. PPF is 15-year locked but fully tax-free at maturity. At 7-8% compounding, 5000/month for 27 years gives roughly 55-60 lakh, which is a base retirement corpus. Revisit every 3 years as income grows.",
+    "extra_queries": [
+      {"query": "Is NPS better than PPF for my timeline?", "answer": "NPS has higher expected returns (8-10%) because even the conservative allocation has 25% equity. PPF is fixed 7.1% but completely guaranteed. Given your risk aversion, split both — PPF as your floor, NPS as your upside. At 27 years, even 0.5% difference compounds to lakhs."}
+    ]
+  },
+  {
+    "session_id": "git_workflow_001",
+    "history": [
+      "Our team of 5 is having merge conflicts constantly.",
+      "We use Git with a single main branch.",
+      "I prefer simple workflows over complex branching.",
+      "Deadline for the current feature is this Thursday.",
+      "We are currently debugging a broken main branch."
+    ],
+    "query": "How do we fix our Git workflow?",
+    "answer": "Broken main with 5 developers means you need feature branches now. Each developer creates a short-lived branch (max 2 days), opens a PR, gets one review, merges with squash. For this Thursday deadline, first fix main: find the last good commit with git bisect, revert the bad merge, then re-apply work on branches. Simple trunk-based with short branches matches your preference — no gitflow complexity.",
+    "extra_queries": [
+      {"query": "How do we prevent main from breaking again?", "answer": "Add a branch protection rule: require 1 review and passing CI before merge. Since you prefer simple workflows, one rule covers it. Also enforce squash merges so main history stays linear and easy to bisect next time."}
+    ]
+  },
+  {
+    "session_id": "cooking_batch_001",
+    "history": [
+      "I live alone and want to do weekly meal prep.",
+      "I prefer vegetarian food.",
+      "I have a 2-burner gas stove and a pressure cooker.",
+      "Budget is 600 rupees per week.",
+      "I want to avoid eating the same thing every day."
+    ],
+    "query": "What should I cook in one batch session?",
+    "answer": "With 600 rupees, vegetarian, 2-burner, pressure cooker: cook 3 bases in one session — dal (changes with spicing: tadka dal one day, dal fry next), rajma or chole (pressure cooker, batch well), and a dry sabzi like aloo gobi or mixed veg. Pair with roti or rice alternating daily. This gives 5-6 meals per day variation from 3 base cooks and stays well under 600 rupees.",
+    "extra_queries": [
+      {"query": "How do I store the batch food safely?", "answer": "Dal and rajma keep 4 days in fridge in airtight containers. Dry sabzi keeps 3 days. Cook the second half of the week's dal fresh on day 4 — 20 minutes only. Pressure cooker makes this fast enough to not count as a second session."}
+    ]
+  },
+  {
+    "session_id": "ci_cd_001",
+    "history": [
+      "I need to set up CI/CD for a Python project.",
+      "I prefer GitHub Actions over Jenkins.",
+      "My deployment target is a single Linux VPS.",
+      "I avoid paid CI services.",
+      "The project deploys via SSH."
+    ],
+    "query": "How do I set up the pipeline?",
+    "answer": "GitHub Actions is free for public repos and cheap for private — matches your no-paid-CI constraint. Create .github/workflows/deploy.yml with jobs: test (pytest), lint (ruff), deploy. For deploy, use appleboy/ssh-action to SSH into your VPS, git pull, restart Gunicorn via systemctl. Store SSH key in GitHub Secrets. This is the minimal SSH-based deploy pattern.",
+    "extra_queries": [
+      {"query": "How do I roll back a bad deploy?", "answer": "In your deploy job, tag each deploy with git tag deploy-$(date +%Y%m%d). On rollback, SSH in, git checkout the previous tag, restart Gunicorn. No fancy tooling needed for a single VPS."}
+    ]
+  },
+  {
+    "session_id": "thesis_writing_001",
+    "history": [
+      "I am writing my MTech thesis on federated learning.",
+      "Submission deadline is 45 days away.",
+      "I prefer LaTeX over Word.",
+      "I am stuck on the literature review chapter.",
+      "My guide wants at least 60 references."
+    ],
+    "query": "How do I structure the literature review?",
+    "answer": "For federated learning with 60 references in 45 days, structure the review in 4 thematic clusters: foundational FL (McMahan et al., FedAvg), privacy (differential privacy, secure aggregation), communication efficiency (compression, quantization), and your specific application domain. Group references by cluster, not chronologically. Use Zotero with LaTeX bibtex export. With LaTeX, a 25-page review at 2 pages per day is done in 12 days — leaves buffer for revisions before deadline.",
+    "extra_queries": [
+      {"query": "How do I find 60 quality references quickly?", "answer": "Start with 5 survey papers on FL (search Google Scholar: federated learning survey 2022-2024). Each survey cites 100+ papers — pick the 12 most-cited per survey. Cross-reference to get your 60. Use Semantic Scholar for citation graph navigation. Two days of focused searching is enough."}
+    ]
+  },
+  {
+    "session_id": "api_rate_limit_001",
+    "history": [
+      "My API is hitting rate limits on a third-party service.",
+      "I call the API 2000 times per minute currently.",
+      "The limit is 500 calls per minute.",
+      "I prefer a queuing approach over caching.",
+      "I am debugging this in production right now."
+    ],
+    "query": "How do I fix this immediately?",
+    "answer": "For immediate production fix: add a token bucket rate limiter in your API client — allow 500 tokens per minute, each call consumes one token, excess calls wait. Use a Redis-based rate limiter if you have multiple instances. Since you prefer queuing, feed overflow calls into a Celery or RQ queue with a worker that respects the 500/min limit. This is the standard pattern for staying under third-party limits.",
+    "extra_queries": [
+      {"query": "How do I implement the token bucket without Redis?", "answer": "Use a threading.Semaphore with a refill thread if you have a single process. Or use the ratelimit library — one decorator on the API call function. For production with multiple workers, Redis is unavoidable for shared state."}
+    ]
+  },
+  {
+    "session_id": "ollama_multimodel_001",
+    "history": [
+      "I want to run two Ollama models simultaneously.",
+      "My machine has 16GB RAM and no GPU.",
+      "I prefer llama3.2:3b and qwen2.5:3b.",
+      "I want to avoid model swapping latency.",
+      "I am currently profiling response times."
+    ],
+    "query": "Can I run both models in memory at the same time?",
+    "answer": "With 16GB RAM and two 3B models at 4-bit quantization, each needs roughly 2-2.5GB. Both fit simultaneously — total around 5GB model memory, leaving 11GB for OS and context. Set OLLAMA_MAX_LOADED_MODELS=2 in your environment. Both will stay resident and avoid reload latency. Profile by sending parallel requests after setting this flag and measuring first-token time.",
+    "extra_queries": [
+      {"query": "Which model should I use for reasoning vs speed?", "answer": "Qwen2.5-3B is faster on instruction-following tasks with structured input. Llama3.2-3B has stronger general reasoning. If you are building a pipeline, route structured SPL prompts to Qwen and open-ended reasoning to Llama — A/B test with your actual queries."}
+    ]
+  },
+  {
+    "session_id": "travel_plan_001",
+    "history": [
+      "I am planning a solo trip to Himachal Pradesh.",
+      "Budget is 15000 rupees total including travel.",
+      "I prefer offbeat locations over popular tourist spots.",
+      "I want to go within the next 3 weeks.",
+      "I avoid luxury hotels — hostels or camping preferred."
+    ],
+    "query": "Which places should I visit?",
+    "answer": "For offbeat Himachal under 15K with hostels/camping in 3 weeks: Tirthan Valley, Jibhi, and Kasol-Kheerganga circuit. Bus from Delhi to Aut (for Tirthan) is 600-700 rupees. Hostels in Tirthan are 400-600 per night. 7-8 days covers both areas. Avoid Shimla and Manali — crowded and expensive. Tirthan especially fits offbeat preference — Great Himalayan National Park access, quiet riverside stays.",
+    "extra_queries": [
+      {"query": "How do I manage 15000 across 8 days?", "answer": "Bus 1400 (round trip), accommodation 4000 (600/night avg), food 2400 (300/day local dhabas), activities and misc 1500. Total 9300 — gives you 5700 buffer for emergencies or an extra day. Local food is very cheap in Tirthan and Jibhi compared to tourist areas."}
+    ]
+  },
+  {
+    "session_id": "python_memory_001",
+    "history": [
+      "My Python service is consuming too much RAM.",
+      "It processes 100K JSON records per run.",
+      "I prefer iterative processing over loading everything at once.",
+      "Current memory usage is 4GB for this task.",
+      "I am debugging this for a production service."
+    ],
+    "query": "How do I reduce memory usage?",
+    "answer": "4GB for 100K JSON records means you are loading the entire dataset into memory. Switch to streaming: use ijson for incremental JSON parsing or process line-by-line if newline-delimited. Use generators instead of list comprehensions. For each record, process and discard before loading the next. This matches your iterative preference and typically reduces RAM from GB to MB range for this workload.",
+    "extra_queries": [
+      {"query": "How do I profile which part uses the most memory?", "answer": "Use memory_profiler — decorate your main processing function with @profile and run python -m memory_profiler script.py. It shows line-by-line memory growth. Usually one list append or json.loads of the full file is the culprit."}
+    ]
+  },
+  {
+    "session_id": "android_app_001",
+    "history": [
+      "I am building an Android app for offline note-taking.",
+      "I prefer Kotlin over Java.",
+      "Deadline for beta is 3 weeks.",
+      "I want to avoid Firebase — local storage only.",
+      "Users are in areas with poor internet connectivity."
+    ],
+    "query": "What architecture should I use?",
+    "answer": "For offline-first Kotlin app targeting poor connectivity: MVVM with Room database. Room handles all local persistence — no Firebase needed. Use ViewModel + LiveData or StateFlow for UI state. With 3-week beta deadline, skip complex sync logic entirely. Room + MVVM is the Android standard and has the most tutorials if you get stuck. Keep the database schema simple: notes table with id, title, body, timestamp, is_deleted for soft deletes.",
+    "extra_queries": [
+      {"query": "How do I implement search in the notes?", "answer": "Room supports FTS (Full-Text Search) natively — add @Fts4 annotation to your Note entity and Room generates the virtual table. Query with MATCH operator. This is local, fast, and requires no external dependency, consistent with your offline-only constraint."}
+    ]
+  },
+  {
+    "session_id": "llm_cost_001",
+    "history": [
+      "I am using a cloud LLM API and my costs are too high.",
+      "I send about 5000 API calls per day.",
+      "Average prompt is 2000 tokens.",
+      "I prefer reducing token usage over switching models.",
+      "I need to cut costs by 60% without losing quality."
+    ],
+    "query": "How do I reduce my token usage?",
+    "answer": "At 2000 tokens average and 5000 calls, you are sending 10M tokens daily. For 60% reduction without quality loss: first, audit what is in those 2000 tokens per call — most have redundant system prompt repetition and verbose context. Switch to a compressed context representation (slot-value format instead of natural language history). Add semantic deduplication so you do not resend remembered facts. Target 800 tokens per call — that gives exactly 60% reduction.",
+    "extra_queries": [
+      {"query": "Which part of the prompt is typically most wasteful?", "answer": "The conversation history. Most systems resend the full history every call. A 10-turn conversation at 200 tokens per turn adds 2000 tokens before your actual query. Replacing full history with a semantic summary or structured memory object of 50-100 tokens is the single highest-leverage optimization."}
+    ]
+  },
+  {
+    "session_id": "kubernetes_basics_001",
+    "history": [
+      "I am learning Kubernetes for the first time.",
+      "I prefer learning by doing over watching tutorials.",
+      "I have a local minikube setup ready.",
+      "I want to deploy a simple FastAPI app.",
+      "I avoid managed cloud Kubernetes for learning."
+    ],
+    "query": "What should I do first?",
+    "answer": "Start by deploying the FastAPI app as a Deployment with 1 replica and expose it via a ClusterIP Service. Write the YAML manually — do not use Helm yet. With minikube, run minikube tunnel to expose the service locally. This teaches the core objects: Pod, Deployment, Service. After this works, add a ConfigMap for environment variables and a second replica. Learning-by-doing on minikube is the right approach before touching cloud K8s.",
+    "extra_queries": [
+      {"query": "How do I debug a pod that is stuck in CrashLoopBackOff?", "answer": "kubectl logs pod-name to see the crash output. kubectl describe pod pod-name to see Events at the bottom — usually shows OOMKilled or image pull errors. If the container exits immediately, add a sleep command temporarily to keep it alive and kubectl exec in to inspect the filesystem."}
+    ]
+  },
+  {
+    "session_id": "data_pipeline_001",
+    "history": [
+      "I need to build an ETL pipeline for 10GB of CSV data.",
+      "I prefer Python with pandas or polars.",
+      "The pipeline needs to run daily.",
+      "I want to avoid cloud orchestration tools like Airflow.",
+      "My server has 8GB RAM."
+    ],
+    "query": "How should I design this pipeline?",
+    "answer": "With 8GB RAM and 10GB CSV, use Polars — it processes out-of-core (larger than RAM) via lazy evaluation and scan_csv. Design three steps: extract (scan CSV, filter early), transform (lazy operations chained), load (write to Parquet or database). Schedule with cron — a simple shell script + systemd timer replaces Airflow for a daily single-job pipeline. Polars on 10GB typically runs in 3-5 minutes on 8GB RAM.",
+    "extra_queries": [
+      {"query": "Why Polars over Pandas for this?", "answer": "Pandas loads 10GB entirely into RAM — your 8GB machine will OOM. Polars lazy API (scan_csv + collect) processes in chunks and uses 2-3x less memory than pandas for the same operation. Also 5-10x faster on filter/groupby. For your constraints, Polars is clearly the right choice."}
+    ]
+  },
+  {
+    "session_id": "jwt_auth_001",
+    "history": [
+      "I am implementing JWT authentication in FastAPI.",
+      "I prefer short-lived access tokens with refresh tokens.",
+      "Security review is due next week.",
+      "I want to avoid storing tokens in localStorage.",
+      "My frontend is React."
+    ],
+    "query": "How should I structure the auth flow?",
+    "answer": "For FastAPI + React with short-lived tokens: issue a 15-minute access token in the response body and a 7-day refresh token as an HttpOnly cookie. React stores the access token in memory (useState or Zustand) — never localStorage. On 401, silently call the refresh endpoint which reads the HttpOnly cookie and returns a new access token. This avoids XSS risk from localStorage and matches your security preference.",
+    "extra_queries": [
+      {"query": "How do I handle token refresh on page reload?", "answer": "On app load, call GET /auth/refresh before rendering protected routes. Since the refresh token is in an HttpOnly cookie, it sends automatically. If refresh succeeds, set the access token in memory. If it fails (expired), redirect to login. This pattern keeps users logged in across page reloads without localStorage."}
+    ]
+  },
+  {
+    "session_id": "embedding_compare_001",
+    "history": [
+      "I need to choose an embedding model for semantic search.",
+      "My corpus has 100K documents in English.",
+      "I prefer models that run locally without API calls.",
+      "Query latency must be under 100ms.",
+      "No GPU available."
+    ],
+    "query": "Which embedding model should I use?",
+    "answer": "For 100K English documents, local, sub-100ms, CPU-only: all-MiniLM-L6-v2 is the standard choice — 22M parameters, 384 dimensions, ~50ms inference on CPU, strong semantic similarity scores. If you need higher quality: bge-small-en-v1.5 (BAAI) is slightly better on benchmarks at similar speed. Both run via sentence-transformers, fully local, no API. Index with ChromaDB or FAISS for sub-10ms retrieval after embedding.",
+    "extra_queries": [
+      {"query": "How many documents can I keep in memory with FAISS?", "answer": "FAISS FlatL2 for 100K documents at 384 dimensions uses about 150MB RAM — easily fits on any machine. For 1M+ documents switch to FAISS IVF index which trades 5% recall for 10x memory reduction. For your 100K corpus, FlatL2 is simplest and most accurate."}
+    ]
+  },
+  {
+    "session_id": "career_switch_001",
+    "history": [
+      "I am a mechanical engineer wanting to switch to data science.",
+      "I have 3 years of work experience in manufacturing.",
+      "I prefer self-learning over paying for bootcamps.",
+      "My target is to get a DS job within 8 months.",
+      "I avoid R — want to focus on Python only."
+    ],
+    "query": "What is the realistic roadmap?",
+    "answer": "8 months, Python-only, self-learning for mechanical-to-DS: Month 1-2 Python + pandas + SQL (use Kaggle Learn — free and structured). Month 3-4 ML fundamentals with scikit-learn on real datasets (start with Kaggle competitions, beginner tier). Month 5-6 build 2 portfolio projects using your manufacturing domain knowledge — predictive maintenance and quality control anomaly detection. Month 7 apply to DS roles in manufacturing/industrial companies where your domain edge matters. Month 8 interviews. Manufacturing background is a real differentiator — lean into it, not away from it.",
+    "extra_queries": [
+      {"query": "What projects should I build for my portfolio?", "answer": "Use your mechanical domain: 1) Predictive maintenance using vibration/temperature sensor data (NASA bearing dataset is public). 2) Quality defect classification from manufacturing images (MVTec dataset). Both showcase DS skills AND manufacturing domain knowledge — this combination is rare and valuable to industrial companies."}
+    ]
+  },
+  {
+    "session_id": "redis_cache_001",
+    "history": [
+      "I need to add caching to a high-traffic Python API.",
+      "The API hits a PostgreSQL database 10000 times per minute.",
+      "I prefer Redis for caching.",
+      "Cache invalidation must happen when data changes.",
+      "I am currently debugging a stale data issue."
+    ],
+    "query": "How do I implement cache invalidation correctly?",
+    "answer": "The stale data issue means your invalidation is missing cases. Use cache-aside pattern: on write operations (INSERT/UPDATE/DELETE), delete the corresponding Redis key immediately after the DB write succeeds. Use a consistent key naming scheme like entity:id so all related cache entries are predictable. For your 10K/min load, consider also setting a short TTL (60-300 seconds) as a safety net — even if an invalidation is missed, staleness is bounded.",
+    "extra_queries": [
+      {"query": "How do I handle cache stampede when a popular key expires?", "answer": "Use probabilistic early expiration (PER): before the TTL expires, with probability proportional to remaining time, recompute the cache value. Or use a distributed lock — only one worker recomputes while others wait briefly. Redis SET with NX flag implements the lock in one line."}
+    ]
+  },
+  {
+    "session_id": "startup_hiring_001",
+    "history": [
+      "I am a founder hiring my first backend engineer.",
+      "Budget is 8 LPA for the role.",
+      "I prefer someone with FastAPI and PostgreSQL experience.",
+      "The hire needs to join within 4 weeks.",
+      "I want to avoid agencies — direct hiring only."
+    ],
+    "query": "Where should I post the job?",
+    "answer": "For direct hiring in 4 weeks at 8 LPA FastAPI/Postgres: post on LinkedIn (organic + paid 500-1000 rupees boost), Instahyre (strong Indian tech talent pool, no agency), and Hacker News Who's Hiring if you have time. Your 4-week deadline means start all three simultaneously today. At 8 LPA for backend, you will get 50-100 applications in one week — the bottleneck will be your screening speed, not pipeline volume.",
+    "extra_queries": [
+      {"query": "How do I screen 100 applications quickly?", "answer": "Send a 45-minute async coding task (FastAPI endpoint + simple Postgres query) to top 20 applicants. Eliminates 80% of resume-inflated candidates. Grade on correctness and code clarity, not speed. For your stack preference (FastAPI + Postgres), the task directly tests what matters. Total screening time: 3-4 hours for 20 submissions."}
+    ]
+  },
+  {
+    "session_id": "notebook_perf_001",
+    "history": [
+      "My Jupyter notebook takes 20 minutes to run.",
+      "It processes large numpy arrays with loops.",
+      "I prefer staying in Python — no C extensions.",
+      "The bottleneck is a nested loop over 1M elements.",
+      "I am profiling this today."
+    ],
+    "query": "How do I speed it up?",
+    "answer": "For 1M element nested loop in pure Python: vectorize with NumPy broadcasting — eliminate the inner loop entirely by operating on arrays. If the logic is complex, use numba @jit decorator — it compiles Python to machine code, typically 10-100x speedup, and counts as pure Python workflow. Profile with %prun in the notebook to confirm the loop is the bottleneck before optimizing. Target: 20 minutes → under 2 minutes with vectorization.",
+    "extra_queries": [
+      {"query": "How do I use numba without changing much code?", "answer": "Add @numba.jit(nopython=True) above your loop function. First call compiles (10-30 seconds), subsequent calls run at C speed. If you get nopython errors, use @jit(forceobj=True) temporarily to find incompatible operations. Usually list operations and string handling need to be replaced with numpy equivalents."}
+    ]
+  },
+  {
+    "session_id": "graph_algo_001",
+    "history": [
+      "I need to find shortest paths in a large graph.",
+      "The graph has 500K nodes and 2M edges.",
+      "I prefer networkx for prototyping but need production performance.",
+      "Deadline for the prototype is this weekend.",
+      "Memory is constrained to 4GB."
+    ],
+    "query": "How should I approach this?",
+    "answer": "For 500K nodes/2M edges in 4GB, NetworkX will work for the prototype this weekend — it stores about 1-2GB for this scale. Use nx.single_source_dijkstra for weighted or nx.bfs_layers for unweighted. For production performance later, switch to igraph (10x faster, lower memory) or use scipy.sparse with custom Dijkstra. Prototype fast with NetworkX this weekend, then optimize only if the prototype validates the approach.",
+    "extra_queries": [
+      {"query": "How do I load a 2M edge graph efficiently?", "answer": "Load edges from a CSV with nx.read_edgelist or build from a pandas DataFrame using nx.from_pandas_edgelist. Avoid adding edges one by one in a loop — batch loading is 10-20x faster for large graphs. If the file is 500MB+, use chunked pandas reading to stay within memory."}
+    ]
+  },
+  {
+    "session_id": "context_compression_001",
+    "history": [
+      "I want to reduce tokens sent to a local LLM in every request.",
+      "The model is qwen2.5:3b running via Ollama.",
+      "I prefer structured key-value context over natural language summaries.",
+      "Current average context is 1500 tokens per request.",
+      "Target is under 200 tokens per request."
+    ],
+    "query": "What compression strategy should I use?",
+    "answer": "For 1500 to 200 tokens with structured key-value preference: build a semantic memory layer. Extract semantic units from conversation turns (tasks, preferences, entities, facts) and store them as structured objects. At inference time, retrieve only the top-k relevant objects for the current query and encode them as slot-value pairs: task=X deadline=Y pref=[A,B]. This achieves 7-10x compression while preserving reasoning-relevant facts. The key is that qwen2.5 can reason over structured slots directly if fine-tuned on examples of this format.",
+    "extra_queries": [
+      {"query": "How do I measure if compression is losing important context?", "answer": "Create a test set of 50 questions where the correct answer requires a fact from the conversation history. Run the same questions with full context vs compressed context and measure answer accuracy. If accuracy drops more than 10%, your extractor is missing important facts — tune the extraction patterns first before optimizing compression ratio further."}
+    ]
+  },
+  {
+    "session_id": "pytest_coverage_001",
+    "history": [
+      "I need to increase test coverage for a Python codebase.",
+      "Current coverage is 42%, target is 80%.",
+      "I prefer pytest over unittest.",
+      "The deadline is end of next sprint, 2 weeks away.",
+      "I want to avoid testing implementation details — behavior only."
+    ],
+    "query": "How do I reach 80% coverage efficiently?",
+    "answer": "42% to 80% in 2 weeks: run pytest --cov --cov-report=html first to see the uncovered lines. Target modules with the most lines first (highest return per test). Write behavior tests: call the public function with known inputs, assert on outputs. Avoid patching internals. For 38 percentage points in 2 weeks, write 5-8 meaningful tests per day — at average 20 lines covered per test you will reach 80% in the first week with buffer for review.",
+    "extra_queries": [
+      {"query": "How do I prioritize which tests to write first?", "answer": "Sort uncovered modules by: lines uncovered × criticality. The payment processing module with 0% coverage is more urgent than the logging utility with 50%. Run coverage report --sort=cover to see lowest-coverage modules first. Fix critical-path modules in week 1, utility modules in week 2."}
+    ]
+  },
+  {
+    "session_id": "open_source_contrib_001",
+    "history": [
+      "I want to start contributing to open source projects.",
+      "I prefer Python projects.",
+      "I am an intermediate developer with 2 years experience.",
+      "I have 5-6 hours free per week.",
+      "I want to avoid large codebases — prefer smaller focused libraries."
+    ],
+    "query": "How do I find a good first project to contribute to?",
+    "answer": "For 5-6 hours/week, intermediate Python, prefer small libraries: search GitHub with filter language:Python label:good-first-issue stars:100..2000. The 100-2000 star range gives active but not overwhelming projects. Look for projects you already use — you understand the use case. Start with documentation or test contributions before code — they have lower review friction and help you understand the codebase. Set a 2-week time limit per issue: if stuck, move on rather than getting blocked.",
+    "extra_queries": [
+      {"query": "How do I make my first PR get accepted?", "answer": "Before writing code: read CONTRIBUTING.md, run existing tests to confirm they pass on your machine, and comment on the issue saying you are working on it. Keep the PR small — one issue, one fix, no refactoring. Add or update the test for your change. Small focused PRs get reviewed and merged 5x faster than large ones."}
+    ]
+  },
+  {
+    "session_id": "microservice_split_001",
+    "history": [
+      "I need to split a monolithic Django app into microservices.",
+      "The app has user, billing, and notification modules.",
+      "I prefer a gradual migration over a big-bang rewrite.",
+      "Deadline to start the migration is next month.",
+      "I want to avoid downtime during migration."
+    ],
+    "query": "Which module should I split first?",
+    "answer": "Start with notifications — it is the lowest risk: it is write-mostly (fire and forget), has no read dependencies from other modules, and downtime there is non-critical. Pattern: keep the Django module running, add an async notification service (FastAPI + Celery) alongside it, route new notification calls to the new service while keeping the old code as fallback. Only decommission the Django module after 2 weeks of stable operation. Billing is highest risk — split it last.",
+    "extra_queries": [
+      {"query": "How do I handle shared database access during migration?", "answer": "Use the strangler fig pattern: both monolith and new service read from the same database initially. New service owns writes to its tables, monolith becomes read-only for those tables. Once the new service is stable, remove monolith's write access. Never dual-write to two databases simultaneously — that way lies consistency bugs."}
+    ]
+  },
+  {
+    "session_id": "llm_eval_001",
+    "history": [
+      "I need to evaluate the output quality of a fine-tuned LLM.",
+      "The model was fine-tuned to answer from compressed SPL prompts.",
+      "I prefer automated metrics over manual labeling.",
+      "I have a test set of 100 SPL prompt-answer pairs.",
+      "I am currently in the evaluation phase."
+    ],
+    "query": "What metrics should I use?",
+    "answer": "For SPL-format fine-tuning evaluation with 100 test pairs: use BERTScore for semantic similarity (better than BLEU for free-form answers), slot-recall (what % of slot values from the SPL context appear correctly in the answer), and hallucination rate (what % of answers contain facts not in the SPL context). The slot-recall metric is the most important for your task — it directly measures if the model learned to reason from the compressed structure rather than generating from priors.",
+    "extra_queries": [
+      {"query": "How do I compute slot-recall automatically?", "answer": "Extract all slot values from the [CTX] block (task, deadline, pref values, entity values). Check if each value appears in the model's answer (exact or fuzzy match). Slot recall = matched values / total slot values. Implement with simple string matching first — if a slot value is underscore-separated like submit_project, also check the natural form submit project. 100 test samples gives statistically meaningful results."}
+    ]
+  },
+  {
+    "session_id": "home_server_001",
+    "history": [
+      "I want to set up a home server for self-hosting.",
+      "I have an old laptop with 8GB RAM and a 500GB SSD.",
+      "I prefer Docker for service management.",
+      "I want to host Nextcloud, Jellyfin, and a personal blog.",
+      "Electricity cost is a concern so I want low power consumption."
+    ],
+    "query": "How do I set this up?",
+    "answer": "Old laptop as home server is good for low power — typically 15-25W idle vs 60-100W for a desktop. Install Ubuntu Server (no GUI, saves 1-2GB RAM). Run all three services in Docker Compose. Nextcloud needs 1GB RAM, Jellyfin 1-2GB depending on transcoding, blog (Ghost or WordPress) 512MB. With 8GB total you have comfortable headroom. Use Nginx Proxy Manager as a reverse proxy container to route by subdomain. Set laptop power settings to never sleep on lid close.",
+    "extra_queries": [
+      {"query": "How do I access my home server from outside?", "answer": "Use Cloudflare Tunnel (free tier) — install cloudflared on the server, create a tunnel in Cloudflare dashboard, point it to your Nginx Proxy Manager. No port forwarding needed, no public IP required. Traffic routes through Cloudflare's edge. Consistent with your low-hassle preference and works behind CGNAT."}
+    ]
+  },
+  {
+    "session_id": "regex_complex_001",
+    "history": [
+      "I am parsing log files with complex patterns.",
+      "Logs have timestamps, error codes, and stack traces.",
+      "I prefer Python regex over external parsing libraries.",
+      "I need to extract error code and timestamp from each line.",
+      "I am currently debugging a pattern that matches too broadly."
+    ],
+    "query": "How do I tighten the regex pattern?",
+    "answer": "For over-matching regex: use anchors and non-greedy quantifiers. Replace .* with .*? (non-greedy) and add word boundaries \\b around error codes. For timestamps, use specific character classes: \\d{4}-\\d{2}-\\d{2} instead of .+. Use named groups: (?P<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}) (?P<error_code>E\\d{4}). Test each pattern change with re.findall on a 10-line sample before applying to the full log.",
+    "extra_queries": [
+      {"query": "How do I handle multi-line stack traces in the log?", "answer": "Use re.MULTILINE and re.DOTALL flags together. Match the stack trace block between the error line and the next timestamp: re.findall(r'(E\\d{4}.*?)(?=\\d{4}-\\d{2}-\\d{2}|$)', log_text, re.DOTALL). This captures everything between two timestamps as one block including the newlines."}
+    ]
+  },
+  {
+    "session_id": "dsa_practice_001",
+    "history": [
+      "I am preparing for coding interviews at product companies.",
+      "I have 6 weeks remaining.",
+      "I prefer solving patterns over memorizing solutions.",
+      "I am weak in dynamic programming and graphs.",
+      "I want to avoid solving random problems — structured approach only."
+    ],
+    "query": "What is the best 6-week plan?",
+    "answer": "Week 1: Arrays and two-pointer pattern (20 problems). Week 2: Sliding window + hash map patterns (20 problems). Week 3: Trees and recursion patterns (20 problems). Week 4: Graphs — BFS/DFS templates (15 problems). Week 5: DP — identify subproblem patterns: 1D state, 2D grid, knapsack (15 problems). Week 6: Mock interviews only — no new patterns. Since you prefer patterns, after each problem write the pattern name and template in your notes. DP in week 5 not earlier — build graph intuition first.",
+    "extra_queries": [
+      {"query": "How do I recognize DP problems in an interview?", "answer": "DP problems ask for: count of ways, minimum/maximum of something, or feasibility with overlapping subproblems. If the brute force is exponential and sub-answers are reused, it is DP. Identify the state (what changes between subproblems), the recurrence (how state N depends on smaller states), and the base case. Write the recurrence first before writing code."}
+    ]
+  },
+  {
+    "session_id": "fastapi_scaling_001",
+    "history": [
+      "My FastAPI app needs to handle 10000 requests per minute.",
+      "Currently deployed on a single server with 4 vCPUs.",
+      "I prefer horizontal scaling over vertical scaling.",
+      "I use async endpoints with PostgreSQL async driver.",
+      "I am currently load testing with locust."
+    ],
+    "query": "What is the bottleneck at 10K RPM?",
+    "answer": "With async FastAPI and asyncpg on 4 vCPUs at 10K RPM: run uvicorn with 4 workers (one per vCPU) — each worker handles concurrent async requests. The bottleneck is usually the database connection pool. Set asyncpg pool to min_size=10 max_size=20 per worker — 80 total connections. Check your locust results for p99 latency: if DB queries show high wait times, the pool is exhausted. If CPU is the bottleneck, add a second server (consistent with your horizontal scaling preference).",
+    "extra_queries": [
+      {"query": "How do I add a second server without downtime?", "answer": "Put a load balancer (Nginx or HAProxy) in front of both servers. Add the second server to the upstream pool, deploy the app there, then add it to rotation. Zero downtime — existing connections stay with server 1, new connections distribute to both. Use sticky sessions only if you have server-side session state (you should not with JWT auth)."}
+    ]
+  },
+  {
+    "session_id": "vector_db_compare_001",
+    "history": [
+      "I need to choose a vector database for a semantic search project.",
+      "Corpus size is 500K documents.",
+      "I prefer open source and self-hosted.",
+      "No budget for cloud vector DB services.",
+      "Query latency target is under 50ms."
+    ],
+    "query": "Which vector database should I use?",
+    "answer": "For 500K docs, self-hosted, open source, under 50ms: Qdrant is the best current choice — Rust-based, very fast (sub-10ms on 500K with HNSW), Docker image available, excellent Python client. ChromaDB is simpler but slower at 500K scale. Weaviate is powerful but heavier (JVM overhead). Qdrant at 500K with ef=128 consistently beats 50ms on a 4-core machine. All three are free and self-hosted — Qdrant wins on performance per resource.",
+    "extra_queries": [
+      {"query": "How much RAM does Qdrant need for 500K vectors?", "answer": "500K vectors at 384 dimensions (float32) = 500K × 384 × 4 bytes = 768MB raw vectors. HNSW index overhead is roughly 1.5-2x, so total: 1.5-2GB RAM. A 4GB server handles this comfortably with headroom for OS and query processing. For 1536-dim embeddings (OpenAI size), multiply by 4: 6-8GB needed."}
+    ]
+  },
+  {
+    "session_id": "spaced_repetition_001",
+    "history": [
+      "I want to memorize 500 vocabulary words for a German language exam.",
+      "Exam is 6 weeks away.",
+      "I prefer active recall over passive reading.",
+      "I study 30 minutes per day.",
+      "I want to avoid paper flashcards — digital only."
+    ],
+    "query": "How should I structure my study sessions?",
+    "answer": "For 500 German words in 6 weeks with 30 min/day: use Anki (free, digital, spaced repetition algorithm). Import the words as a deck. Anki's SM-2 algorithm schedules reviews exactly when you are about to forget — active recall built in. At 30 min/day, you will cover all 500 words in 2 weeks and spend weeks 3-6 in spaced review. Set new cards per day to 25 for weeks 1-2, then 0 for pure review. This is the most efficient approach for exam vocabulary.",
+    "extra_queries": [
+      {"query": "How do I make Anki cards more effective for vocabulary?", "answer": "Use cloze deletion: hide the German word in a sentence, not just a standalone word. Context builds recall better than isolated translation. Add the audio pronunciation if Anki's Forvo integration is available. Seeing the word in a sentence once encodes it faster than seeing the translation 5 times."}
+    ]
+  },
+  {
+    "session_id": "token_budget_001",
+    "history": [
+      "I am building a chat system with a strict token budget.",
+      "Each request must stay under 512 tokens total.",
+      "I prefer structured context over natural language history.",
+      "The model is a 3B local model via Ollama.",
+      "Current average prompt is 800 tokens and exceeding the budget."
+    ],
+    "query": "How do I get under 512 tokens?",
+    "answer": "At 800 tokens average with a 512 limit, you need to cut 288 tokens (36%). For a structured context preference: first, audit the prompt — system prompt, context, and query each separately. System prompt should be under 50 tokens (dense instruction, no examples). Context should be structured slot-value format: task=X pref=[Y,Z] status=W — typically 50-100 tokens versus 400 tokens of NL history. Reserve 100 tokens for the query. This gets you to 250-300 tokens per request.",
+    "extra_queries": [
+      {"query": "How do I shorten the system prompt without losing behavior?", "answer": "Replace verbose instructions with dense directives. Instead of 'You are a helpful assistant that reads symbolic context and answers questions based only on the provided information without making up facts', write: 'Read SPL context. Answer from slots only. No hallucination.' Both encode the same behavior — the compressed version is 8 tokens vs 35."}
+    ]
+  },
+  {
+    "session_id": "python_packaging_001",
+    "history": [
+      "I want to publish my Python library to PyPI.",
+      "The library is a utility for semantic text processing.",
+      "I prefer pyproject.toml over setup.py.",
+      "I need to publish within this week.",
+      "I want to avoid complex build systems."
+    ],
+    "query": "What is the minimal setup to publish?",
+    "answer": "For minimal PyPI publish with pyproject.toml this week: use Hatch or Flit — both are single-file configuration, no complex build setup. With Flit: add [tool.flit.metadata] to pyproject.toml, run flit build then flit publish. You need a PyPI account and API token. Total time from zero to published: 2 hours including account setup. Avoid setuptools + twine complexity — Flit is the simplest modern option.",
+    "extra_queries": [
+      {"query": "How do I version my library correctly?", "answer": "Use semantic versioning: MAJOR.MINOR.PATCH. Start at 0.1.0 for first publish. Increment patch for bug fixes, minor for new features (backward compatible), major for breaking changes. Store the version in one place — pyproject.toml version field — and import it in __init__.py using importlib.metadata.version('your-package-name')."}
+    ]
+  },
+  {
+    "session_id": "whisper_local_001",
+    "history": [
+      "I want to transcribe audio files locally.",
+      "I have a CPU-only machine with 8GB RAM.",
+      "I prefer Whisper over cloud transcription APIs.",
+      "Audio files are 30-60 minutes long in Hindi.",
+      "I want to avoid any data leaving my machine."
+    ],
+    "query": "Which Whisper model size should I use?",
+    "answer": "For 30-60 minute Hindi audio, CPU-only, 8GB RAM, local-only: use Whisper medium or medium.en. Medium model is 1.5GB, handles Hindi well (Whisper is multilingual), and processes 1 hour of audio in roughly 45-90 minutes on CPU. Large (2.9GB) gives marginally better accuracy for Hindi but doubles processing time. Use faster-whisper library instead of OpenAI's original — it uses CTranslate2 for 4x faster CPU inference.",
+    "extra_queries": [
+      {"query": "How do I batch-process multiple audio files efficiently?", "answer": "Use faster-whisper with a simple loop — load the model once, iterate over files. Processing is sequential on CPU so parallelism does not help. For 10 one-hour files, expect 8-15 hours total on CPU. Run overnight with a script that writes transcripts to text files as it goes, so you do not lose progress if interrupted."}
+    ]
+  },
+  {
+    "session_id": "semantic_dedup_001",
+    "history": [
+      "I need to deduplicate a dataset of 200K text records.",
+      "Many records are near-duplicates, not exact duplicates.",
+      "I prefer semantic similarity over string matching.",
+      "My machine has 16GB RAM and no GPU.",
+      "The deduplication needs to finish within 24 hours."
+    ],
+    "query": "What is the most efficient approach?",
+    "answer": "For 200K near-dedup with semantic similarity on CPU in 24 hours: embed all records with all-MiniLM-L6-v2 (fast CPU embeddings, 384 dim). Then use FAISS FlatIP index for approximate nearest neighbor search — query each embedding against the index with threshold 0.90 cosine similarity. Group duplicates by connected components. Total time estimate: 2 hours embedding + 4 hours ANN search on CPU. 16GB RAM handles 200K at 384 dim easily (about 300MB for embeddings).",
+    "extra_queries": [
+      {"query": "What similarity threshold should I use?", "answer": "Start at 0.95 and manually inspect 50 pairs at that threshold. If you see false positives (different records marked as duplicates), raise to 0.97. If you miss obvious duplicates (same content, different wording), lower to 0.90. For news/documentation text, 0.92-0.95 is typically the sweet spot. Always spot-check before bulk deletion."}
+    ]
+  },
+  {
+    "session_id": "batch_inference_001",
+    "history": [
+      "I need to run inference on 50K samples using a local LLM.",
+      "The model is llama3.2:3b via Ollama.",
+      "I prefer batch processing over real-time.",
+      "I have 3 days to complete this.",
+      "I want to minimize total cost — no cloud inference."
+    ],
+    "query": "How do I structure the batch inference pipeline?",
+    "answer": "For 50K samples in 3 days with llama3.2:3b via Ollama locally: at ~2-3 seconds per sample on CPU, 50K samples = 28-42 hours — tight for 3 days. Parallelize by running 3-4 Ollama instances (if CPU cores allow) and distributing samples across them. Write results incrementally to JSONL with checkpointing every 1000 samples so you can resume if interrupted. Use Ollama's /api/generate endpoint directly with async requests for maximum throughput.",
+    "extra_queries": [
+      {"query": "How do I checkpoint and resume if the pipeline crashes?", "answer": "Write each completed sample to a JSONL file immediately after inference. On restart, read the JSONL to find already-processed sample IDs, skip those, and process the remainder. This makes the pipeline idempotent — crashing at any point loses at most 1 sample. Use a simple set of processed IDs in memory for fast lookup."}
+    ]
+  },
+  {
+    "session_id": "linux_permissions_001",
+    "history": [
+      "I am setting up a multi-user Linux server.",
+      "I prefer minimal permissions — principle of least privilege.",
+      "I need to give developers access to deploy without sudo.",
+      "There are 5 developers and 1 admin.",
+      "I am currently debugging a permission denied error."
+    ],
+    "query": "How do I set up deployment permissions correctly?",
+    "answer": "For deploy-without-sudo: create a deploy user, add developers to a deploy group, and set the application directory owned by deploy with group-write permissions (chmod 775, chown deploy:deploy). For systemctl restart without sudo, use a sudoers rule: %deploy ALL=NOPASSWD: /bin/systemctl restart your-service — scoped to that single command only. This satisfies least-privilege: developers can deploy and restart only their service, nothing else.",
+    "extra_queries": [
+      {"query": "How do I find what is causing the permission denied error?", "answer": "Run sudo -u deploy ls -la /path/to/app to see what the deploy user can access. Check file ownership with stat filename. For systemctl errors, run journalctl -u your-service -n 50 to see if it is a permission error during startup (e.g., writing to a log directory owned by root)."}
+    ]
+  },
+  {
+    "session_id": "ollama_api_001",
+    "history": [
+      "I want to use Ollama programmatically from Python.",
+      "Model is mistral:7b.",
+      "I prefer the requests library over the official Ollama Python client.",
+      "I need streaming responses for a chat interface.",
+      "I am currently debugging a response parsing issue."
+    ],
+    "query": "How do I parse streaming responses from Ollama?",
+    "answer": "Ollama's streaming endpoint returns newline-delimited JSON objects. With requests, use stream=True and iter_lines(). Each line is a JSON dict with a 'response' key containing the next token and a 'done' boolean. Loop until done=True, collecting response strings. The parsing bug is usually from trying to json.loads the entire response at once — you must parse each line individually as it arrives.",
+    "extra_queries": [
+      {"query": "How do I implement this with async streaming?", "answer": "Use httpx.AsyncClient with stream() context manager. In an async for loop, iterate over response.aiter_lines(). Each line parse with json.loads. This gives true async streaming — useful for a web chat interface where you want to yield tokens to the frontend as they arrive via Server-Sent Events."}
+    ]
+  },
+  {
+    "session_id": "knowledge_graph_001",
+    "history": [
+      "I am building a knowledge graph from unstructured text.",
+      "Source data is 10000 Wikipedia articles.",
+      "I prefer spaCy for NLP processing.",
+      "I want to store the graph in Neo4j.",
+      "Deadline is 3 weeks."
+    ],
+    "query": "What is the extraction pipeline?",
+    "answer": "For 10K Wikipedia articles → KG in Neo4j in 3 weeks: Pipeline: 1) spaCy NER to extract entities (PERSON, ORG, GPE, EVENT). 2) Dependency parsing to extract (subject, verb, object) triples. 3) Coreference resolution to link pronouns to entities (use spaCy neuralcoref or coreferee). 4) Batch write entities as nodes and triples as relationships to Neo4j. Process articles in batches of 500 to control memory. spaCy en_core_web_lg gives better NER accuracy for Wikipedia-style text than the small model.",
+    "extra_queries": [
+      {"query": "How do I handle entity disambiguation in the graph?", "answer": "Two entities with the same name (Apple the company vs apple the fruit) need disambiguation. Use the surrounding entity context: if ORG entities appear near Apple in the same sentence, link to the company node. Add a confidence score on entity nodes. For Wikipedia specifically, the article title is usually a strong disambiguation signal — use it as the canonical node identifier."}
+    ]
+  },
+  {
+    "session_id": "spl_slot_aware_001",
+    "history": [
+      "I need to improve retrieval for a semantic memory system.",
+      "Currently using pure dense vector search.",
+      "I prefer slot-aware retrieval over generic similarity.",
+      "The context has task, preference, constraint, and entity slots.",
+      "I am currently in the design phase."
+    ],
+    "query": "How do I make retrieval slot-aware?",
+    "answer": "For slot-aware retrieval: weight retrieval scores by slot type relevance to the query. If the query mentions a deadline, boost constraint-type memories. If it asks about preferences, boost preference-type memories. Implement as a post-retrieval reranker: retrieve top-20 by dense similarity, then rescore by multiplying cosine similarity by a slot-type weight based on query intent classification. This adds one lightweight classification step but significantly improves slot-relevant context selection without changing the core vector index.",
+    "extra_queries": [
+      {"query": "How do I classify query intent for slot weighting?", "answer": "Use keyword heuristics first: deadline/when/time → boost constraint, prefer/want/avoid → boost preference, who/which entity → boost entity. For 90% of practical queries, keywords suffice without a full classifier. Add a fallback: if no keyword matches, return equal weights across all slot types and let cosine similarity decide."}
+    ]
+  },
+  {
+    "session_id": "model_quantization_001",
+    "history": [
+      "I want to run a 7B model on a machine with 8GB RAM.",
+      "The model is Mistral-7B.",
+      "I prefer GGUF quantization via llama.cpp.",
+      "I want the best quality-to-memory tradeoff.",
+      "I avoid cloud inference."
+    ],
+    "query": "Which quantization level should I use?",
+    "answer": "For Mistral-7B in 8GB RAM via llama.cpp GGUF: use Q4_K_M. It needs ~4.8GB RAM leaving 3GB for context and system. Quality degradation from FP16 is minimal for instruction following — roughly 1-3% perplexity increase. Q5_K_M is slightly better quality at 5.7GB but leaves less headroom. Q3_K_M fits in 3.9GB but has noticeable quality loss on complex reasoning. Q4_K_M is the standard recommendation for 8GB machines.",
+    "extra_queries": [
+      {"query": "How do I run Q4_K_M with Ollama?", "answer": "Download the GGUF file from HuggingFace (TheBloke or bartowski repos have Q4_K_M variants). Create a Modelfile: FROM ./mistral-7b-q4_k_m.gguf. Run ollama create mistral-local -f Modelfile. Then ollama run mistral-local. This is fully local with no API dependency."}
+    ]
+  },
+  {
+    "session_id": "zero_shot_classify_001",
+    "history": [
+      "I need to classify support tickets into 15 categories.",
+      "No labeled training data exists yet.",
+      "I prefer zero-shot classification.",
+      "The model must run locally.",
+      "Accuracy target is at least 70%."
+    ],
+    "query": "How do I set this up?",
+    "answer": "For zero-shot, local, 15-category classification: use facebook/bart-large-mnli via HuggingFace pipeline with device=-1 (CPU). Define descriptive category labels — the quality of your label descriptions directly determines accuracy. BART-MNLI achieves 70-80% on well-described categories zero-shot. If accuracy is below 70% after testing, add 5-10 examples per category and switch to a few-shot prompt with a local LLM via Ollama — that usually gets to 80%+ with minimal labeling effort.",
+    "extra_queries": [
+      {"query": "How do I write good category labels for zero-shot?", "answer": "Make each label a short descriptive phrase, not a single word. 'billing issue with invoice or payment' beats 'billing'. The NLI model compares the ticket to 'This text is about [label]' — descriptive labels win because they match more surface patterns. Test each label against 5 example tickets before finalizing."}
+    ]
+  },
+  {
+    "session_id": "streaming_data_001",
+    "history": [
+      "I need to process real-time sensor data from 50 devices.",
+      "Data arrives at 100 messages per second total.",
+      "I prefer Kafka for message streaming.",
+      "Processing latency must be under 500ms.",
+      "I want to avoid managed cloud streaming services."
+    ],
+    "query": "How do I design the processing pipeline?",
+    "answer": "For 100 msg/s from 50 devices with Kafka, self-hosted, under 500ms: single Kafka broker is sufficient (100 msg/s is low volume — Kafka handles 1M+ msg/s on commodity hardware). Create one topic per device type or one partitioned topic with device_id as partition key. Consume with a Python consumer using confluent-kafka, process in-memory with a sliding window, write results to TimescaleDB or InfluxDB. 500ms latency is easily achievable — Kafka end-to-end latency is typically under 10ms.",
+    "extra_queries": [
+      {"query": "How do I self-host Kafka without Zookeeper?", "answer": "Use Kafka KRaft mode (Kafka 3.3+) — no Zookeeper dependency. Single node KRaft is production-ready for this scale. Docker image: confluentinc/cp-kafka with KAFKA_PROCESS_ROLES=broker,controller. For 100 msg/s you need 1 CPU and 1GB RAM for Kafka itself — very lightweight."}
+    ]
+  },
+  {
+    "session_id": "hindi_nlp_001",
+    "history": [
+      "I need to build a text classifier for Hindi social media posts.",
+      "Dataset has 8000 labeled posts.",
+      "I prefer transformer models over classical ML.",
+      "No GPU available for training.",
+      "Deadline is 4 weeks."
+    ],
+    "query": "Which model and approach should I use?",
+    "answer": "For 8000 Hindi posts, transformers, CPU-only training, 4 weeks: fine-tune ai4bharat/indic-bert or google/muril on CPU using the HuggingFace Trainer. With 8000 samples and a 110M parameter model, training takes 4-8 hours on CPU for 3 epochs — feasible in 4 weeks. Use learning rate 2e-5, batch size 16 (gradient accumulation if OOM), and freeze the bottom 6 layers to speed up training. This outperforms TF-IDF + classical ML for social media Hindi by significant margin.",
+    "extra_queries": [
+      {"query": "How do I handle noisy Hinglish text in social media?", "answer": "Normalize before tokenizing: convert Hinglish romanized words to Devanagari using IndicTrans2 or a simple mapping for common words. Remove URLs, @mentions, hashtag symbols (keep the word). Clean repetitive characters (haiiiii → hai). Multilingual models (MuRIL) handle some code-mixing natively — the normalization step mainly helps with the romanized Hinglish the model has not seen."}
+    ]
+  },
+  {
+    "session_id": "spl_finetuning_eval_001",
+    "history": [
+      "I fine-tuned Qwen2.5-3B on SPL format prompts.",
+      "Training used 800 instruction-response pairs.",
+      "The model was trained with QLoRA rank 16.",
+      "I need to evaluate if the model can reason from SPL directly.",
+      "I prefer automated evaluation over manual scoring."
+    ],
+    "query": "Did fine-tuning improve SPL reasoning?",
+    "answer": "To verify SPL reasoning improvement: compare base model vs fine-tuned model on 3 test types: 1) slot-recall — does the answer use slot values from [CTX]? 2) no-hallucination — does the answer avoid facts not in [CTX]? 3) completeness — does the answer address the [Q] using available context? Run both models on 50 held-out SPL prompts. If fine-tuned model shows >15% improvement in slot-recall, the training was effective. If improvement is under 5%, the training data needs more diverse slot combinations.",
+    "extra_queries": [
+      {"query": "How do I generate more diverse training data if needed?", "answer": "Identify which slot combinations are underrepresented in your 800 samples. Generate synthetic conversations that produce those slot types: add constraint-heavy scenarios, multi-entity conversations, conflicting preference examples. For each new conversation, vary the domain (not just tech) — cooking, finance, health — so the model learns SPL as a universal format, not a coding-only notation."}
+    ]
+  },
+  {
+    "session_id": "compression_ratio_001",
+    "history": [
+      "I measured my SPL compression at 8x on average.",
+      "Full context average is 1200 tokens.",
+      "SPL average is 150 tokens.",
+      "I want to verify that 8x compression preserves enough reasoning context.",
+      "I prefer quantitative verification."
+    ],
+    "query": "How do I verify context preservation at 8x compression?",
+    "answer": "For quantitative verification of 8x compression: create 30 question-answer pairs where the correct answer requires recalling a specific fact from the full context. Run both full-context and SPL-context through the model and score correctness. Compute: recall@SPL = correct answers using SPL / total questions. If recall@SPL is above 85% of recall@full, compression is preserving reasoning-relevant context effectively. Below 75% means your extractor is dropping important facts — profile which question types fail most.",
+    "extra_queries": [
+      {"query": "Which facts are most likely to be lost at 8x compression?", "answer": "Temporal relationships (first X then Y), negations (avoid Z), and multi-hop facts (A depends on B which depends on C) are most often lost. Your SPL slots handle atomic facts well but struggle with ordering and dependency chains. Add an event ordering slot to SPL: seq=[step1,step2,step3] to capture sequential dependencies."}
+    ]
+  },
+  {
+    "session_id": "finetune_dataset_quality_001",
+    "history": [
+      "I am generating a fine-tuning dataset for SPL reasoning.",
+      "Target is 600 high-quality instruction-response pairs.",
+      "I prefer slot-aware answers over generic answers.",
+      "Quality is more important than quantity.",
+      "I am currently in the dataset generation phase."
+    ],
+    "query": "What makes a high-quality SPL training sample?",
+    "answer": "A high-quality SPL training sample has three properties: 1) The [CTX] block contains 3-6 meaningful slots (not just one). 2) The answer demonstrably uses slot values — if task=debug_api, the answer should reference the API debugging context, not generic advice. 3) The answer does not invent facts absent from [CTX]. Bad samples: generic answers that would be identical regardless of slot values. Good samples: slot-specific answers where changing one slot value would change the answer. Slot-specificity is the core quality signal.",
+    "extra_queries": [
+      {"query": "How do I filter out low-quality samples automatically?", "answer": "Compute slot-value coverage per sample: count how many slot values from [CTX] appear in the answer. Discard samples where coverage is zero (answer ignores all context). Flag samples where coverage is below 30% for manual review. This automated filter removes generic answers that add no SPL-reasoning signal to the training data."}
+    ]
+  }
+]
