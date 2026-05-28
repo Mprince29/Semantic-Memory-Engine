@@ -5,6 +5,42 @@ import time
 from semantic_memory.config import DEFAULT_CONFIG, EngineConfig
 from semantic_memory.domain.models import SemanticMemoryObject
 
+
+_CODING_STACK_KEYWORDS = (
+    "flask", "fastapi", "django", "gunicorn", "uvicorn", "nginx", "docker",
+    "postgres", "postgresql", "sqlite", "redis", "celery", "react",
+    "typescript", "python", "kubernetes", "chromadb", "ollama",
+)
+
+_TASK_LEADING_STOPWORDS = frozenset({
+    "a", "an", "the", "to", "my", "our", "your", "this", "that",
+})
+
+_TASK_TRAILING_STOPWORDS = frozenset({
+    "today", "tomorrow", "tonight", "now", "soon", "later",
+})
+
+_PREFERENCE_VALUE_HINTS = frozenset(_CODING_STACK_KEYWORDS) | {
+    "cloud", "cloud services", "local", "offline", "systemd", "api",
+    "postgres", "redis", "gpu", "cpu",
+}
+
+_DEBUG_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\b500\b.*\bstartup\b|\bstartup\b.*\b500\b"), "500_on_startup"),
+    (re.compile(r"\b404\b"), "404_error"),
+    (re.compile(r"\b500\b"), "500_error"),
+    (re.compile(r"\btimeout\b|\btimed out\b"), "timeout"),
+    (re.compile(r"\btraceback\b"), "traceback"),
+    (re.compile(r"\bstartup failure\b|\bfails? on startup\b|\bcrash(?:es)? on startup\b"), "startup_failure"),
+    (re.compile(r"\bconnection refused\b"), "connection_refused"),
+    (re.compile(r"\bmodule not found\b|\bmodulenotfounderror\b"), "module_not_found"),
+    (re.compile(r"\bimport error\b|\bimporterror\b"), "import_error"),
+    (re.compile(r"\bsegmentation fault\b|\bsegfault\b"), "segfault"),
+    (re.compile(r"\bexception\b"), "exception"),
+    (re.compile(r"\bcrash(?:ed|es|ing)?\b"), "crash"),
+    (re.compile(r"\bdebug(?:ging)?\b"), "debugging"),
+)
+
 try:
     import spacy
 except ImportError:  # pragma: no cover
@@ -76,6 +112,8 @@ class SemanticExtractor:
         smos.extend(self._extract_preferences(text, session_id, now))
         smos.extend(self._extract_temporal(text, session_id, now))
         smos.extend(self._extract_facts(text, session_id, now))
+        smos.extend(self._extract_coding_stack(text, session_id, now))
+        smos.extend(self._extract_debug_signals(text, session_id, now))
         smos.extend(self._extract_topics(text, session_id, now))
 
         for smo in smos:
@@ -88,11 +126,13 @@ class SemanticExtractor:
         smos: list[SemanticMemoryObject] = []
         lowered = text.lower()
         for verb in self.config.action_verbs:
-            pattern = rf"\b{re.escape(verb)}\b\s+([a-zA-Z0-9_\-\.]+(?:\s+[a-zA-Z0-9_\-\.]+){{0,3}})"
+            pattern = rf"\b{re.escape(verb)}\b\s+([a-zA-Z0-9_\-\.]+(?:\s+[a-zA-Z0-9_\-\.]+){{0,5}})"
             match = re.search(pattern, lowered)
             if not match:
                 continue
-            value = match.group(1).strip(" .,!?")
+            value = self._clean_task_value(match.group(1))
+            if not value:
+                continue
             smos.append(
                 SemanticMemoryObject(
                     id=self._make_id("task", f"{verb}:{value}", session_id),
@@ -106,6 +146,17 @@ class SemanticExtractor:
             )
         return smos
 
+    # Preference indicators that fire too broadly on non-preference sentences.
+    # These are valid signals only when followed by a tool/technology/concept,
+    # not by verbs, articles, or continuation phrases.
+    _WEAK_PREF_INDICATORS = frozenset({"use", "need", "want", "keep", "no", "without"})
+    # First token of a match must not be one of these — catches "getting", "to", "it", etc.
+    _PREF_VALUE_BLOCKLIST = frozenset({
+        "a", "an", "the", "to", "it", "this", "that", "my", "your", "our",
+        "getting", "going", "being", "doing", "having", "running",
+        "up", "out", "on", "in", "at", "by", "as", "so",
+    })
+
     def _extract_preferences(self, text: str, session_id: str, timestamp: float) -> list[SemanticMemoryObject]:
         smos: list[SemanticMemoryObject] = []
         lowered = text.lower()
@@ -115,6 +166,20 @@ class SemanticExtractor:
             if not match:
                 continue
             value = match.group(1).strip(" .,!?")
+            first_token = value.split()[0] if value.split() else ""
+
+            # Weak indicators need the extracted value to look like a real noun/tool,
+            # not a continuation of a sentence ("keep it local only", "need to deploy")
+            if keyword in self._WEAK_PREF_INDICATORS and first_token in self._PREF_VALUE_BLOCKLIST:
+                continue
+
+            # Value must be at least one non-trivial token
+            if first_token in self._PREF_VALUE_BLOCKLIST:
+                continue
+
+            if keyword in self._WEAK_PREF_INDICATORS and not self._looks_like_preference_value(value):
+                continue
+
             smos.append(
                 SemanticMemoryObject(
                     id=self._make_id("preference", f"{polarity}:{value}", session_id),
@@ -183,6 +248,88 @@ class SemanticExtractor:
                     )
                 )
         return smos
+
+    def _extract_coding_stack(self, text: str, session_id: str, timestamp: float) -> list[SemanticMemoryObject]:
+        smos: list[SemanticMemoryObject] = []
+        lowered = text.lower()
+        seen: set[str] = set()
+
+        for keyword in _CODING_STACK_KEYWORDS:
+            if keyword not in lowered:
+                continue
+            value = "postgres" if keyword == "postgresql" else keyword
+            if value in seen:
+                continue
+            seen.add(value)
+            smos.append(
+                SemanticMemoryObject(
+                    id=self._make_id("stack", value, session_id),
+                    type="stack",
+                    subject="app",
+                    predicate="uses",
+                    value=value,
+                    session_id=session_id,
+                    timestamp=timestamp,
+                )
+            )
+
+        return smos
+
+    def _extract_debug_signals(self, text: str, session_id: str, timestamp: float) -> list[SemanticMemoryObject]:
+        smos: list[SemanticMemoryObject] = []
+        lowered = text.lower()
+        seen: set[str] = set()
+
+        for pattern, label in _DEBUG_PATTERNS:
+            if not pattern.search(lowered):
+                continue
+            if label in seen:
+                continue
+            seen.add(label)
+            smos.append(
+                SemanticMemoryObject(
+                    id=self._make_id("debug", label, session_id),
+                    type="debug",
+                    subject="app",
+                    predicate="error",
+                    value=label,
+                    session_id=session_id,
+                    timestamp=timestamp,
+                )
+            )
+
+        if "500_on_startup" in seen:
+            smos = [item for item in smos if item.value != "500_error"]
+        if "startup_failure" in seen and "500_on_startup" in seen:
+            smos = [item for item in smos if item.value != "startup_failure"]
+
+        return smos
+
+    @staticmethod
+    def _clean_task_value(raw_value: str) -> str:
+        value = raw_value.strip(" .,!?")
+        words = value.split()
+        while words and words[0] in _TASK_LEADING_STOPWORDS:
+            words.pop(0)
+        while words and words[-1] in _TASK_TRAILING_STOPWORDS:
+            words.pop()
+        if len(words) >= 2 and words[-2:] == ["next", "week"]:
+            words = words[:-2]
+        if len(words) >= 2 and words[-2:] == ["this", "week"]:
+            words = words[:-2]
+        if len(words) >= 3 and words[-3:] == ["for", "this", "project"]:
+            words = words[:-3]
+        return " ".join(words).strip()
+
+    @staticmethod
+    def _looks_like_preference_value(value: str) -> bool:
+        normalized = value.strip().lower()
+        if normalized in _PREFERENCE_VALUE_HINTS:
+            return True
+        tokens = [token for token in normalized.replace("_", " ").split() if token]
+        if not tokens:
+            return False
+        return any(token in _PREFERENCE_VALUE_HINTS for token in tokens)
 
     def _extract_facts(self, text: str, session_id: str, timestamp: float) -> list[SemanticMemoryObject]:
         smos: list[SemanticMemoryObject] = []

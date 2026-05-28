@@ -1,9 +1,12 @@
 from typing import Iterable
 
-import numpy as np
-
 from semantic_memory.config import DEFAULT_CONFIG, EngineConfig
 from semantic_memory.domain.models import SemanticMemoryObject
+
+try:
+    import numpy as np
+except ImportError:  # pragma: no cover - optional dependency
+    np = None
 
 
 class SemanticDeduplicator:
@@ -35,20 +38,35 @@ class SemanticDeduplicator:
         candidate: SemanticMemoryObject,
         existing_smos: Iterable[SemanticMemoryObject],
     ) -> SemanticMemoryObject | None:
-        candidate_vector = np.array(candidate.embedding, dtype=float)
+        candidate_vector = self._to_vector(candidate.embedding)
         for existing in existing_smos:
             if not self._is_comparable(candidate, existing):
                 continue
-            existing_vector = np.array(existing.embedding, dtype=float)
+            existing_vector = self._to_vector(existing.embedding)
+            if len(candidate_vector) != len(existing_vector):
+                continue
             similarity = self._cosine_similarity(candidate_vector, existing_vector)
             if similarity >= self.config.similarity_threshold:
                 return existing
         return None
 
     @staticmethod
-    def _cosine_similarity(left: np.ndarray, right: np.ndarray) -> float:
-        denom = (np.linalg.norm(left) * np.linalg.norm(right)) + 1e-9
-        return float(np.dot(left, right) / denom)
+    def _to_vector(values: list[float]):
+        if np is not None:
+            return np.array(values, dtype=float)
+        return [float(value) for value in values]
+
+    @staticmethod
+    def _cosine_similarity(left, right) -> float:
+        if np is not None:
+            denom = (np.linalg.norm(left) * np.linalg.norm(right)) + 1e-9
+            return float(np.dot(left, right) / denom)
+
+        left_norm = sum(value * value for value in left) ** 0.5
+        right_norm = sum(value * value for value in right) ** 0.5
+        denom = (left_norm * right_norm) + 1e-9
+        dot = sum(a * b for a, b in zip(left, right))
+        return float(dot / denom)
 
     @staticmethod
     def _pick_winner(left: SemanticMemoryObject, right: SemanticMemoryObject) -> SemanticMemoryObject:

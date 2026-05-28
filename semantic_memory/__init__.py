@@ -1,1 +1,5 @@
-__all__ = ["application", "config", "domain", "extraction", "infrastructure", "prompting", "retrieval", "training"]
+__all__ = [
+    "application", "config", "contradiction", "domain",
+    "extraction", "infrastructure", "prompting", "retrieval",
+    "spl_schema", "training",
+]

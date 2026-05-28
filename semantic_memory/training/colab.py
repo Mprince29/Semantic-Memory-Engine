@@ -132,7 +132,7 @@ FastLanguageModel.for_inference(model)
 TEST_PROMPTS = [
     \"\"\"### Instruction
 You are a reasoning assistant. Context arrives in Symbolic Prompt Language.
-Read the structure directly. Keys may include task, deadline, pref, !pref, ent, q_hist, scope, hw, and status.
+Read the structure directly. Keys may include task, deadline, pref, !pref, ent, q_hist, scope, hw, status, stack, and err.
 Respond precisely and do not invent missing facts.
 
 ### Input
@@ -141,6 +141,8 @@ task=deploy_flask_app deadline=T+1
 pref=[nginx,systemd]
 !pref=[docker]
 scope=self_hosted hw=2gb_ram
+stack=[flask,gunicorn]
+err=[500_on_startup]
 q_hist=[flask,gunicorn,ubuntu]
 [/CTX]
 [Q] How do I keep the app running after reboot?
@@ -149,7 +151,7 @@ q_hist=[flask,gunicorn,ubuntu]
 \"\"\",
     \"\"\"### Instruction
 You are a reasoning assistant. Context arrives in Symbolic Prompt Language.
-Read the structure directly. Keys may include task, deadline, pref, !pref, ent, q_hist, scope, hw, and status.
+Read the structure directly. Keys may include task, deadline, pref, !pref, ent, q_hist, scope, hw, status, stack, and err.
 Respond precisely and do not invent missing facts.
 
 ### Input

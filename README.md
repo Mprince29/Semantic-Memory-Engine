@@ -79,9 +79,9 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Requires [Ollama](https://ollama.com) running locally with `qwen2.5:3b` pulled:
+Requires [Ollama](https://ollama.com) running locally with `qwen2.5:3b-instruct` pulled:
 ```bash
-ollama pull qwen2.5:3b
+ollama pull qwen2.5:3b-instruct
 ```
 
 ## Usage
@@ -106,7 +106,7 @@ Evaluate a model's SPL reasoning (requires Ollama):
 python finetune/eval_compression.py --model qwen-spl
 
 # Compare base vs fine-tuned
-python finetune/eval_compression.py --compare --base qwen2.5:3b --finetuned qwen-spl
+python finetune/eval_compression.py --compare --base qwen2.5:3b-instruct --finetuned qwen-spl
 ```
 
 ## Fine-Tuning
@@ -116,7 +116,7 @@ Generate the Colab training script:
 python finetune/train_lora.py
 ```
 
-Or open `finetune/train_spl.ipynb` directly in Google Colab (T4 GPU runtime). Upload `finetune/data/spl_final.jsonl` and run all cells. Training takes ~10 minutes on T4 for 376 samples.
+Or open `finetune/train_spl.ipynb` directly in Google Colab (T4 GPU runtime). Upload `finetune/data/spl_combined.jsonl` and run all cells. Training takes about 10-15 minutes on T4 depending on dataset size.
 
 After training, export the model as GGUF and load into Ollama:
 ```bash

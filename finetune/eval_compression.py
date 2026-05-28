@@ -6,8 +6,6 @@ import time
 from pathlib import Path
 from typing import Any
 
-import requests
-
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
@@ -16,6 +14,7 @@ from benchmark import rough_token_count
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 EVAL_SAMPLE_COUNT = 50
+EXTENSION_SLOT_KEYS = {"stack", "err", "sym", "vitals", "juris", "clause"}
 
 
 def parse_ctx_slots(spl_input: str) -> dict[str, list[str]]:
@@ -55,6 +54,18 @@ def all_slot_values(slots: dict[str, list[str]]) -> list[str]:
 
 def compute_slot_recall(slots: dict[str, list[str]], answer: str) -> float:
     values = all_slot_values(slots)
+    if not values:
+        return 0.0
+    answer_lower = answer.lower()
+    hits = sum(1 for v in values if v in answer_lower)
+    return round(hits / len(values), 3)
+
+
+def compute_extension_slot_recall(slots: dict[str, list[str]], answer: str) -> float:
+    values: list[str] = []
+    for key, slot_values in slots.items():
+        if key in EXTENSION_SLOT_KEYS:
+            values.extend(slot_values)
     if not values:
         return 0.0
     answer_lower = answer.lower()
@@ -111,6 +122,11 @@ ALPACA_PROMPT = """\
 
 
 def query_ollama(model: str, instruction: str, spl_input: str, timeout: int = 60) -> str:
+    try:
+        import requests
+    except ImportError as exc:  # pragma: no cover - environment-specific
+        return f"[ERROR: requests not installed: {exc}]"
+
     prompt = ALPACA_PROMPT.format(instruction=instruction, input=spl_input)
     payload = {
         "model": model,
@@ -152,6 +168,7 @@ def evaluate_model(model: str, samples: list[dict], label: str = "") -> dict[str
         results.append({
             "sample_id": i,
             "slot_recall": compute_slot_recall(slots, answer),
+            "extension_slot_recall": compute_extension_slot_recall(slots, answer),
             "hallucination": compute_hallucination_score(slots, query, answer),
             "answer_relevance": compute_answer_relevance(query, answer),
             "input_tokens": rough_token_count(spl_input),
@@ -161,13 +178,18 @@ def evaluate_model(model: str, samples: list[dict], label: str = "") -> dict[str
 
         if i % 10 == 0:
             avg_sr = sum(r["slot_recall"] for r in results) / len(results)
-            print(f"  {i}/{len(samples)} — avg slot_recall so far: {avg_sr:.3f}")
+            avg_ext = sum(r["extension_slot_recall"] for r in results) / len(results)
+            print(
+                f"  {i}/{len(samples)} — avg slot_recall: {avg_sr:.3f} "
+                f"| avg ext_recall: {avg_ext:.3f}"
+            )
 
     avg = lambda key: round(sum(r[key] for r in results) / len(results), 3)
     return {
         "model": model,
         "n_samples": len(results),
         "avg_slot_recall": avg("slot_recall"),
+        "avg_extension_slot_recall": avg("extension_slot_recall"),
         "avg_hallucination": avg("hallucination"),
         "avg_answer_relevance": avg("answer_relevance"),
         "avg_input_tokens": avg("input_tokens"),
@@ -183,6 +205,7 @@ def print_summary(summary: dict[str, Any]) -> None:
     print(f"  Samples evaluated: {summary['n_samples']}")
     print(f"{'='*55}")
     print(f"  slot_recall      : {summary['avg_slot_recall']:.3f}  (higher = better, target >0.35)")
+    print(f"  ext_slot_recall  : {summary['avg_extension_slot_recall']:.3f}  (higher = better for V2 slots)")
     print(f"  hallucination    : {summary['avg_hallucination']:.3f}  (lower  = better, target <0.40)")
     print(f"  answer_relevance : {summary['avg_answer_relevance']:.3f}  (higher = better, target >0.50)")
     print(f"  avg input tokens : {summary['avg_input_tokens']}")
@@ -209,17 +232,18 @@ def compare_models(base: str, finetuned: str, samples: list[dict]) -> None:
         return f"{sign}{d:.3f} {tag}"
 
     print(f"  slot_recall      : {delta('avg_slot_recall')}")
+    print(f"  ext_slot_recall  : {delta('avg_extension_slot_recall')}")
     print(f"  hallucination    : {delta('avg_hallucination')}")
     print(f"  answer_relevance : {delta('avg_answer_relevance')}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", default="qwen2.5:3b")
-    parser.add_argument("--dataset", default="finetune/data/spl_final.jsonl")
+    parser.add_argument("--model", default="qwen2.5:3b-instruct")
+    parser.add_argument("--dataset", default="finetune/data/spl_combined.jsonl")
     parser.add_argument("--n", type=int, default=EVAL_SAMPLE_COUNT)
     parser.add_argument("--compare", action="store_true")
-    parser.add_argument("--base", default="qwen2.5:3b")
+    parser.add_argument("--base", default="qwen2.5:3b-instruct")
     parser.add_argument("--finetuned", default="qwen-spl")
     parser.add_argument("--output", default=None)
     args = parser.parse_args()

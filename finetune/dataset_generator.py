@@ -29,6 +29,16 @@ MINIMAL_INSTRUCTION = (
 )
 
 DROPPABLE_SLOTS = ["task", "pref", "!pref", "ent", "q_hist", "scope", "hw", "status"]
+DOMAIN_SLOT_KEYS = {
+    "coding": ("stack=", "err="),
+    "medical": ("sym=", "vitals="),
+    "legal": ("juris=", "clause="),
+}
+DEFAULT_OUTPUT_NAMES = (
+    "spl_dataset.jsonl",
+    "spl_combined.jsonl",
+    "spl_final.jsonl",
+)
 
 
 def _rough_tokens(text: str) -> int:
@@ -49,6 +59,27 @@ def _extract_slot_values(spl_block: str) -> list[str]:
             if len(cleaned) > 2:
                 tokens.append(cleaned)
     return tokens
+
+
+def infer_schema_name(smos: list, history: list[str], query: str) -> str:
+    types = {smo.type for smo in smos}
+    if {"stack", "debug"} & types:
+        return "coding"
+
+    text = " ".join(history + [query]).lower()
+    medical_keywords = {
+        "symptom", "symptoms", "fever", "pain", "dosage", "diagnosis", "patient",
+        "medication", "vitals", "clinical",
+    }
+    legal_keywords = {
+        "contract", "clause", "court", "jurisdiction", "statute", "legal",
+        "filing", "case law", "plaintiff", "defendant",
+    }
+    if any(keyword in text for keyword in medical_keywords):
+        return "medical"
+    if any(keyword in text for keyword in legal_keywords):
+        return "legal"
+    return "general"
 
 
 def _slot_coverage(spl_block: str, answer: str) -> float:
@@ -86,10 +117,13 @@ def generate_base_sample(
     session_id: str,
     extractor: SemanticExtractor,
     encoder: SPLEncoder,
+    schema_name: str = "general",
 ) -> dict[str, Any]:
     state = build_semantic_state(history, session_id=session_id, extractor=extractor)
-    spl = encoder.encode(state, query)
-    return _make_sample(SYSTEM_PROMPT, spl, answer)
+    spl = encoder.encode(state, query, schema_name=schema_name)
+    sample = _make_sample(SYSTEM_PROMPT, spl, answer)
+    sample["meta"]["schema"] = schema_name
+    return sample
 
 
 def generate_slot_dropout_sample(base_spl: str, query: str, answer: str) -> dict[str, Any] | None:
@@ -132,6 +166,17 @@ def generate_minimal_spl_sample(base_spl: str, query: str, answer: str) -> dict[
     return sample
 
 
+def generate_schema_extension_sample(base_spl: str, answer: str, schema_name: str) -> dict[str, Any] | None:
+    if schema_name == "general":
+        return None
+    if not any(slot in base_spl for slot in DOMAIN_SLOT_KEYS.get(schema_name, ())):
+        return None
+    sample = _make_sample(SYSTEM_PROMPT, base_spl, answer)
+    sample["meta"]["augmentation"] = f"schema_extension:{schema_name}"
+    sample["meta"]["schema"] = schema_name
+    return sample
+
+
 def generate_dataset(source_path: Path, output_path: Path) -> None:
     rows: list[dict] = json.loads(source_path.read_text())
     extractor = SemanticExtractor()
@@ -142,6 +187,7 @@ def generate_dataset(source_path: Path, output_path: Path) -> None:
     stats = {
         "total_conversations": len(rows),
         "base_samples": 0,
+        "schema_extension_samples": 0,
         "extra_query_samples": 0,
         "slot_dropout_samples": 0,
         "minimal_spl_samples": 0,
@@ -154,8 +200,18 @@ def generate_dataset(source_path: Path, output_path: Path) -> None:
         query = row["query"]
         answer = row["answer"]
         extra_queries: list[dict] = row.get("extra_queries", [])
+        state = build_semantic_state(history, session_id=session_id, extractor=extractor)
+        schema_name = infer_schema_name(state, history, query)
 
-        base = generate_base_sample(history, query, answer, session_id, extractor, encoder)
+        base = generate_base_sample(
+            history,
+            query,
+            answer,
+            session_id,
+            extractor,
+            encoder,
+            schema_name="general",
+        )
         base_spl = base["input"]
 
         if base["meta"]["slot_coverage"] >= 0.05 or len(_extract_slot_values(base_spl)) == 0:
@@ -164,12 +220,37 @@ def generate_dataset(source_path: Path, output_path: Path) -> None:
         else:
             stats["filtered_low_quality"] += 1
 
+        schema_sample = generate_base_sample(
+            history,
+            query,
+            answer,
+            session_id,
+            extractor,
+            encoder,
+            schema_name=schema_name,
+        )
+        schema_extension = generate_schema_extension_sample(
+            schema_sample["input"],
+            answer,
+            schema_name=schema_name,
+        )
+        if schema_extension and schema_extension["meta"]["slot_coverage"] >= 0.05:
+            samples.append(schema_extension)
+            stats["schema_extension_samples"] += 1
+
         for eq in extra_queries:
             eq_sample = generate_base_sample(
-                history, eq["query"], eq["answer"], session_id, extractor, encoder
+                history,
+                eq["query"],
+                eq["answer"],
+                session_id,
+                extractor,
+                encoder,
+                schema_name=schema_name,
             )
             if eq_sample["meta"]["slot_coverage"] >= 0.05:
                 eq_sample["meta"]["augmentation"] = "extra_query"
+                eq_sample["meta"]["schema"] = schema_name
                 samples.append(eq_sample)
                 stats["extra_query_samples"] += 1
             else:
@@ -182,13 +263,16 @@ def generate_dataset(source_path: Path, output_path: Path) -> None:
 
         minimal = generate_minimal_spl_sample(base_spl, query, answer)
         if minimal and minimal["meta"]["slot_coverage"] >= 0.03:
+            minimal["meta"]["schema"] = schema_name
             samples.append(minimal)
             stats["minimal_spl_samples"] += 1
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w") as f:
-        for sample in samples:
-            f.write(json.dumps(sample) + "\n")
+    for filename in DEFAULT_OUTPUT_NAMES:
+        target_path = output_path.parent / filename
+        with target_path.open("w") as f:
+            for sample in samples:
+                f.write(json.dumps(sample) + "\n")
 
     stats["total_samples"] = len(samples)
     stats["avg_input_tokens"] = round(
@@ -206,7 +290,9 @@ def generate_dataset(source_path: Path, output_path: Path) -> None:
     print("=" * 60)
     for k, v in stats.items():
         print(f"  {k}: {v}")
-    print(f"\nOutput: {output_path}")
+    print("\nOutputs:")
+    for filename in DEFAULT_OUTPUT_NAMES:
+        print(f"  {output_path.parent / filename}")
 
 
 if __name__ == "__main__":

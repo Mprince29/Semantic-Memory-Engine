@@ -13,9 +13,10 @@ class EngineConfig:
     spacy_model: str = "en_core_web_sm"
     embedding_model: str = "all-MiniLM-L6-v2"
     vector_collection: str = "semantic_memory"
+    allow_inmemory_vector_store: bool = False
     token_budget: int = 80
     similarity_threshold: float = 0.88
-    ollama_model: str = "qwen2.5:3b"
+    ollama_model: str = "qwen2.5:3b-instruct"
     ollama_base_url: str = "http://localhost:11434"
     action_verbs: tuple[str, ...] = (
         "build",
@@ -110,6 +111,17 @@ class EngineConfig:
     fine_tune_model_id: str = "Qwen/Qwen2.5-3B-Instruct"
     fine_tune_max_seq_length: int = 768
     fine_tune_output_dir: str = "artifacts/qwen2.5-3b-spl"
+
+    # V2 — adaptive token budget tier overrides (0 = use analyzer default)
+    budget_simple: int = 45
+    budget_preference: int = 75
+    budget_planning: int = 140
+
+    # V2 — default SPL schema for new sessions
+    default_schema: str = "general"
+
+    # V2 — contradiction detection similarity floor (values below this are not comparable)
+    contradiction_min_overlap: float = 0.1
 
 
 DEFAULT_CONFIG = EngineConfig()
